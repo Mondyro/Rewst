@@ -4,7 +4,7 @@
 
 - This Action allows you to bring any workflow execution results back into Rewst as a Rewst Context Variables.
 - This Action was created to avoid running every task again in a workflow. Instead, you can simply test a single aspect of it by simulating the context that exists from a previous execution.
-- It supports any result grom you own organisation. the following is an example of the url you would enter: https://app.rewst.io/organizations/xxxxxxxx-5288-45fc-b516-5cxxxxxx32/results/969xxxx5-ae87-44f1-8e0f-974e4478db75
+- It supports any result from you own organisation,the following is an example of the url you will get from a previous execution: https://app.rewst.io/organizations/xxxxxxxx-5288-45fc-b516-5cxxxxxx32/results/969xxxx5-ae87-44f1-8e0f-974e4478db75 (please note this url will not work)
 - It also supports any shared Jinja workflow: https://app.rewst.io/jinja-live-editor?id=4ff8580d-2241-41b5-a106-16aa09c7159a
 - I have already shared this information with the Rewst ROC.
 
