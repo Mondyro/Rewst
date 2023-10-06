@@ -26,6 +26,16 @@
 6. Once it is working you can copy the action and bring it into a failed workflow.
 7. If a CTX you were using was called CTX.Firewalls_Mapping you could replace it with CTX.web_workflowExecution[0].contexts[4].Firewalls_Mapping in my case
 
+
+## Examples
+
+Input Variables on the Rewst_Execution_Results Action On Success
+- One_Result - (true or blank) - This handels loops and speeds up the speed of viewing results.  This will only show the last instance of a context varible.
+- Hide_WF_CTX - (true or blank) -  If your ininital Workflow Execution has more then 100 Execution Results I would suggest setting this to true
+- include_vars - specify your input varibles here from the Workflow Execution e.g any of your CTX from the main workflow. Adds to the single Execution_Summary Action
+- ignore_vars - specify the vars you want to ignore from the original Workflow Execution
+- default_excludes - Default Items that I dont think most people need
+
 Test it out for yourself.
 
 ## Examples
@@ -34,3 +44,5 @@ Before this workflow failed with almost 1000 tasks having been executed.
 
 After I used my action to just bring in the CTX from the last failed run
 <img alt="image" src="https://raw.githubusercontent.com/Mondyro/Rewst/main/Rewst%20Workflow%20Execution%20Results/Example_With_Action.jpg">
+
+
