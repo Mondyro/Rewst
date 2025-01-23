@@ -26,24 +26,30 @@
         "description": "Location for all resources."
       }
     },
+    "appInsightsChoice": {
+      "type": "string",
+      "defaultValue": "New",
+      "allowedValues": [
+        "New",
+        "Existing"
+      ],
+      "metadata": {
+        "description": "Choose whether to create a new Application Insights resource or use an existing one."
+      }
+    },
     "appInsightsResourceId": {
       "type": "string",
       "metadata": {
-        "description": "The Resource ID of the Application Insights resource."
-      }
+        "description": "The Resource ID of the existing Application Insights resource."
+      },
+      "condition": "[equals(parameters('appInsightsChoice'), 'Existing')]"
     },
     "appInsightsInstrumentationKey": {
       "type": "string",
       "metadata": {
-        "description": "The Instrumentation Key for Application Insights."
-      }
-    },
-    "httpTriggerFunctionName": {
-      "type": "string",
-      "defaultValue": "PowerShell-HTTP-Trigger",
-      "metadata": {
-        "description": "The name of the HTTP trigger function."
-      }
+        "description": "The Instrumentation Key of the existing Application Insights resource."
+      },
+      "condition": "[equals(parameters('appInsightsChoice'), 'Existing')]"
     },
     "githubRepoUrl": {
       "type": "string",
@@ -57,9 +63,29 @@
     "functionAppSku": {
       "tier": "Dynamic",  // This ensures the Consumption Plan (Dynamic) is used
       "name": "F1"        // The F1 SKU corresponds to the Consumption Plan
+    },
+    "appInsightsSku": {
+      "name": "Basic"  // Application Insights SKU (can be 'Standard' if needed)
     }
   },
   "resources": [
+    // Conditional resource for Application Insights (only created if 'New' is selected)
+    {
+      "condition": "[equals(parameters('appInsightsChoice'), 'New')]",
+      "type": "Microsoft.Insights/components",
+      "apiVersion": "2020-02-02",
+      "name": "[concat(parameters('functionAppName'), '-ai')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "Application_Type": "FunctionApp",
+        "Request_Source": "IbizaAI",
+        "sku": {
+          "name": "[variables('appInsightsSku').name]"
+        }
+      }
+    },
+
+    // Server farm (App Service Plan) resource for the function app
     {
       "type": "Microsoft.Web/serverFarms",
       "apiVersion": "2024-04-01",
@@ -68,21 +94,23 @@
       "properties": {
         "name": "[parameters('functionAppName')]",
         "sku": {
-          "name": "[variables('functionAppSku').name]",  // Using F1 SKU for Consumption Plan
-          "tier": "[variables('functionAppSku').tier]",  // Dynamic tier for the Consumption Plan
+          "name": "[variables('functionAppSku').name]",
+          "tier": "[variables('functionAppSku').tier]",
           "capacity": 1
         }
       }
     },
+
+    // Function App resource
     {
       "type": "Microsoft.Web/sites",
       "apiVersion": "2024-04-01",
       "name": "[parameters('functionAppName')]",
       "location": "[parameters('location')]",
       "tags": {
-        "hidden-link: /app-insights-resource-id": "[parameters('appInsightsResourceId')]",
-        "hidden-link: /app-insights-instrumentation-key": "[parameters('appInsightsInstrumentationKey')]",
-        "hidden-link: /app-insights-conn-string": "[concat('InstrumentationKey=', parameters('appInsightsInstrumentationKey'), ';IngestionEndpoint=https://centralus-2.in.applicationinsights.azure.com/;LiveEndpoint=https://centralus.livediagnostics.monitor.azure.com/')]"
+        "hidden-link: /app-insights-resource-id": "[if(equals(parameters('appInsightsChoice'), 'New'), resourceId('Microsoft.Insights/components', concat(parameters('functionAppName'), '-ai')), parameters('appInsightsResourceId'))]",
+        "hidden-link: /app-insights-instrumentation-key": "[if(equals(parameters('appInsightsChoice'), 'New'), reference(resourceId('Microsoft.Insights/components', concat(parameters('functionAppName'), '-ai')), '2020-02-02', 'Full').InstrumentationKey, parameters('appInsightsInstrumentationKey'))]",
+        "hidden-link: /app-insights-conn-string": "[if(equals(parameters('appInsightsChoice'), 'New'), concat('InstrumentationKey=', reference(resourceId('Microsoft.Insights/components', concat(parameters('functionAppName'), '-ai')), '2020-02-02', 'Full').InstrumentationKey, ';IngestionEndpoint=https://centralus-2.in.applicationinsights.azure.com/;LiveEndpoint=https://centralus.livediagnostics.monitor.azure.com/'), concat('InstrumentationKey=', parameters('appInsightsInstrumentationKey'), ';IngestionEndpoint=https://centralus-2.in.applicationinsights.azure.com/;LiveEndpoint=https://centralus.livediagnostics.monitor.azure.com/'))]"
       },
       "properties": {
         "enabled": true,
@@ -101,6 +129,8 @@
         }
       }
     },
+
+    // Function resource for the trigger
     {
       "type": "Microsoft.Web/sites/functions",
       "apiVersion": "2024-04-01",
