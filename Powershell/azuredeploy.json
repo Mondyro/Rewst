@@ -26,25 +26,6 @@
         "description": "Location for all resources."
       }
     },
-    "appInsightsResourceId": {
-      "type": "string",
-      "metadata": {
-        "description": "The Resource ID of the Application Insights resource."
-      }
-    },
-    "appInsightsInstrumentationKey": {
-      "type": "string",
-      "metadata": {
-        "description": "The Instrumentation Key for Application Insights."
-      }
-    },
-    "httpTriggerFunctionName": {
-      "type": "string",
-      "defaultValue": "PowerShell-HTTP-Trigger",
-      "metadata": {
-        "description": "The name of the HTTP trigger function."
-      }
-    },
     "githubRepoUrl": {
       "type": "string",
       "defaultValue": "https://github.com/Mondyro/Rewst/tree/main/Powershell",
@@ -53,7 +34,30 @@
       }
     }
   },
+  "variables": {
+    "functionAppSku": {
+      "tier": "Dynamic",
+      "name": "F1"
+    },
+    "appInsightsSku": {
+      "name": "Basic"  // Application Insights SKU (can also be 'Standard' if needed)
+    }
+  },
   "resources": [
+    {
+      "type": "Microsoft.Insights/components",
+      "apiVersion": "2020-02-02",
+      "name": "[concat(parameters('functionAppName'), '-ai')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "Application_Type": "FunctionApp",
+        "Request_Source": "IbizaAI",
+        "sku": {
+          "name": "[variables('appInsightsSku').name]"
+        }
+      },
+      "resources": []
+    },
     {
       "type": "Microsoft.Web/serverFarms",
       "apiVersion": "2024-04-01",
@@ -62,8 +66,8 @@
       "properties": {
         "name": "[parameters('functionAppName')]",
         "sku": {
-          "name": "F1",             // F1 SKU is the Consumption Plan
-          "tier": "Dynamic",        // Dynamic tier for the Consumption Plan
+          "name": "[variables('functionAppSku').name]",
+          "tier": "[variables('functionAppSku').tier]",
           "capacity": 1
         }
       }
@@ -74,9 +78,9 @@
       "name": "[parameters('functionAppName')]",
       "location": "[parameters('location')]",
       "tags": {
-        "hidden-link: /app-insights-resource-id": "[parameters('appInsightsResourceId')]",
-        "hidden-link: /app-insights-instrumentation-key": "[parameters('appInsightsInstrumentationKey')]",
-        "hidden-link: /app-insights-conn-string": "InstrumentationKey=[parameters('appInsightsInstrumentationKey')];IngestionEndpoint=https://centralus-2.in.applicationinsights.azure.com/;LiveEndpoint=https://centralus.livediagnostics.monitor.azure.com/;ApplicationId=2ada99bf-9a97-4ea7-b966-6cd6cae805d2"
+        "hidden-link: /app-insights-resource-id": "[resourceId('Microsoft.Insights/components', concat(parameters('functionAppName'), '-ai'))]",
+        "hidden-link: /app-insights-instrumentation-key": "[reference(resourceId('Microsoft.Insights/components', concat(parameters('functionAppName'), '-ai')), '2020-02-02', 'Full').InstrumentationKey]",
+        "hidden-link: /app-insights-conn-string": "[concat('InstrumentationKey=', reference(resourceId('Microsoft.Insights/components', concat(parameters('functionAppName'), '-ai')), '2020-02-02', 'Full').InstrumentationKey, ';IngestionEndpoint=https://centralus-2.in.applicationinsights.azure.com/;LiveEndpoint=https://centralus.livediagnostics.monitor.azure.com/;ApplicationId=2ada99bf-9a97-4ea7-b966-6cd6cae805d2')]"
       },
       "kind": "functionapp,linux",
       "properties": {
@@ -122,17 +126,18 @@
     {
       "type": "Microsoft.Web/sites/functions",
       "apiVersion": "2024-04-01",
-      "name": "[concat(parameters('functionAppName'), '/', parameters('httpTriggerFunctionName'))]",
+      "name": "[concat(parameters('functionAppName'), '/', 'PowerShell-HTTP-Trigger')]",
       "location": "[parameters('location')]",
       "dependsOn": [
-        "[resourceId('Microsoft.Web/sites', parameters('functionAppName'))]"
+        "[resourceId('Microsoft.Web/sites', parameters('functionAppName'))]",
+        "[resourceId('Microsoft.Insights/components', concat(parameters('functionAppName'), '-ai'))]"
       ],
       "properties": {
-        "script_root_path_href": "[concat('https://', parameters('functionAppName'), '.azurewebsites.net/admin/vfs/home/site/wwwroot/', parameters('httpTriggerFunctionName'), '/')]",
-        "script_href": "[concat('https://', parameters('functionAppName'), '.azurewebsites.net/admin/vfs/home/site/wwwroot/', parameters('httpTriggerFunctionName'), '/run.ps1')]",
-        "config_href": "[concat('https://', parameters('functionAppName'), '.azurewebsites.net/admin/vfs/home/site/wwwroot/', parameters('httpTriggerFunctionName'), '/function.json')]",
-        "test_data_href": "[concat('https://', parameters('functionAppName'), '.azurewebsites.net/admin/vfs/tmp/FunctionsData/', parameters('httpTriggerFunctionName'), '.dat')]",
-        "href": "[concat('https://', parameters('functionAppName'), '.azurewebsites.net/admin/functions/', parameters('httpTriggerFunctionName'))]",
+        "script_root_path_href": "[concat('https://', parameters('functionAppName'), '.azurewebsites.net/admin/vfs/home/site/wwwroot/', 'PowerShell-HTTP-Trigger', '/')]",
+        "script_href": "[concat('https://', parameters('functionAppName'), '.azurewebsites.net/admin/vfs/home/site/wwwroot/', 'PowerShell-HTTP-Trigger', '/run.ps1')]",
+        "config_href": "[concat('https://', parameters('functionAppName'), '.azurewebsites.net/admin/vfs/home/site/wwwroot/', 'PowerShell-HTTP-Trigger', '/function.json')]",
+        "test_data_href": "[concat('https://', parameters('functionAppName'), '.azurewebsites.net/admin/vfs/tmp/FunctionsData/', 'PowerShell-HTTP-Trigger', '.dat')]",
+        "href": "[concat('https://', parameters('functionAppName'), '.azurewebsites.net/admin/functions/', 'PowerShell-HTTP-Trigger')]",
         "config": {
           "bindings": [
             {
@@ -152,7 +157,7 @@
             }
           ]
         },
-        "invoke_url_template": "[concat('https://', parameters('functionAppName'), '.azurewebsites.net/api/', parameters('httpTriggerFunctionName'))]",
+        "invoke_url_template": "[concat('https://', parameters('functionAppName'), '.azurewebsites.net/api/', 'PowerShell-HTTP-Trigger')]",
         "language": "powershell",
         "isDisabled": false
       }
