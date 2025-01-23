@@ -1,0 +1,62 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "functionAppName": {
+      "type": "string",
+      "defaultValue": "Rewst-PowerShell-Flow",
+      "metadata": {
+        "description": "The name of the Function App."
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "Central US",
+      "allowedValues": [
+        "East US",
+        "West US",
+        "North Europe",
+        "Southeast Asia",
+        "Australia East",
+        "Central US",
+        "East US 2",
+        "West Europe"
+      ],
+      "metadata": {
+        "description": "Location for all resources."
+      }
+    },
+    "serverFarmId": {
+      "type": "string",
+      "metadata": {
+        "description": "The Resource ID of the existing App Service Plan (If not using Consumption Plan, this should be a Premium/Standard plan)."
+      }
+    },
+    "appInsightsResourceId": {
+      "type": "string",
+      "metadata": {
+        "description": "The Resource ID of the Application Insights resource."
+      }
+    },
+    "appInsightsInstrumentationKey": {
+      "type": "string",
+      "metadata": {
+        "description": "The Instrumentation Key for Application Insights."
+      }
+    },
+    "httpTriggerFunctionName": {
+      "type": "string",
+      "defaultValue": "PowerShell-HTTP-Trigger",
+      "metadata": {
+        "description": "The name of the HTTP trigger function."
+      }
+    },
+    "githubRepoUrl": {
+      "type": "string",
+      "defaultValue": "https://github.com/Mondyro/Rewst/tree/main/Powershell",
+      "metadata": {
+        "description": "GitHub repository URL containing the PowerShell scripts and function code."
+      }
+    }
+  }
+}
