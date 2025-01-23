@@ -50,6 +50,13 @@
       "metadata": {
         "description": "The name of the HTTP trigger function."
       }
+    },
+    "githubRepoUrl": {
+      "type": "string",
+      "defaultValue": "https://github.com/Mondyro/Rewst/tree/main/Powershell",
+      "metadata": {
+        "description": "GitHub repository URL containing the PowerShell scripts and function code."
+      }
     }
   },
   "variables": {
@@ -110,7 +117,18 @@
           "functionAppScaleLimit": 200,
           "minimumElasticInstanceCount": 0
         },
-        "httpsOnly": true
+        "httpsOnly": true,
+        "sourceControl": {
+          "repoUrl": "[parameters('githubRepoUrl')]",
+          "branch": "main",
+          "isManualIntegration": false,
+          "isGitHubAction": false,
+          "deploymentRollbackEnabled": true,
+          "buildProperties": {
+            "runtimeStack": "PowerShell",
+            "platform": "Linux"
+          }
+        }
       }
     },
     {
