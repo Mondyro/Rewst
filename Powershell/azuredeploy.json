@@ -26,12 +26,6 @@
         "description": "Location for all resources."
       }
     },
-    "serverFarmId": {
-      "type": "string",
-      "metadata": {
-        "description": "The Resource ID of the existing App Service Plan (If not using Consumption Plan, this should be a Premium/Standard plan)."
-      }
-    },
     "appInsightsResourceId": {
       "type": "string",
       "metadata": {
@@ -59,12 +53,6 @@
       }
     }
   },
-  "variables": {
-    "functionAppSku": {
-      "tier": "Dynamic",    // Ensure this is Dynamic for Consumption Plan
-      "name": "F1"          // F1 is the Consumption Plan SKU
-    }
-  },
   "resources": [
     {
       "type": "Microsoft.Web/serverFarms",
@@ -74,8 +62,8 @@
       "properties": {
         "name": "[parameters('functionAppName')]",
         "sku": {
-          "name": "[variables('functionAppSku').name]",
-          "tier": "[variables('functionAppSku').tier]",
+          "name": "F1",             // F1 SKU is the Consumption Plan
+          "tier": "Dynamic",        // Dynamic tier for the Consumption Plan
           "capacity": 1
         }
       }
