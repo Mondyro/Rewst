@@ -33,17 +33,30 @@
         "description": "GitHub repository URL containing the PowerShell scripts and function code."
       }
     },
+    "appInsightsChoice": {
+      "type": "string",
+      "defaultValue": "New",
+      "allowedValues": [
+        "New",
+        "Existing"
+      ],
+      "metadata": {
+        "description": "Choose whether to create a new Application Insights resource or use an existing one."
+      }
+    },
     "appInsightsResourceId": {
       "type": "string",
       "metadata": {
-        "description": "The Resource ID of the Application Insights resource."
-      }
+        "description": "The Resource ID of the existing Application Insights resource."
+      },
+      "condition": "[equals(parameters('appInsightsChoice'), 'Existing')]"
     },
     "appInsightsInstrumentationKey": {
       "type": "string",
       "metadata": {
-        "description": "The Instrumentation Key for Application Insights."
-      }
+        "description": "The Instrumentation Key for the existing Application Insights."
+      },
+      "condition": "[equals(parameters('appInsightsChoice'), 'Existing')]"
     }
   },
   "variables": {
@@ -56,7 +69,9 @@
     }
   },
   "resources": [
+    // Conditional resource for Application Insights (only created if 'New' is selected)
     {
+      "condition": "[equals(parameters('appInsightsChoice'), 'New')]",
       "type": "Microsoft.Insights/components",
       "apiVersion": "2020-02-02",
       "name": "[concat(parameters('functionAppName'), '-ai')]",
@@ -69,6 +84,8 @@
         }
       }
     },
+
+    // Server farm (App Service Plan) resource for the function app
     {
       "type": "Microsoft.Web/serverFarms",
       "apiVersion": "2024-04-01",
@@ -82,6 +99,8 @@
         }
       }
     },
+
+    // Function App resource
     {
       "type": "Microsoft.Web/sites",
       "apiVersion": "2024-04-01",
@@ -104,10 +123,13 @@
         }
       },
       "tags": {
-        "hidden-link: /app-insights-resource-id": "[parameters('appInsightsResourceId')]",
-        "hidden-link: /app-insights-instrumentation-key": "[parameters('appInsightsInstrumentationKey')]"
+        // If "New" is selected, link the new App Insights resource
+        "hidden-link: /app-insights-resource-id": "[if(equals(parameters('appInsightsChoice'), 'New'), resourceId('Microsoft.Insights/components', concat(parameters('functionAppName'), '-ai')), parameters('appInsightsResourceId'))]",
+        "hidden-link: /app-insights-instrumentation-key": "[if(equals(parameters('appInsightsChoice'), 'New'), reference(resourceId('Microsoft.Insights/components', concat(parameters('functionAppName'), '-ai')), '2020-02-02', 'Full').InstrumentationKey, parameters('appInsightsInstrumentationKey'))]"
       }
     },
+
+    // Function resource for the trigger
     {
       "type": "Microsoft.Web/sites/functions",
       "apiVersion": "2024-04-01",
@@ -115,7 +137,7 @@
       "location": "[parameters('location')]",
       "dependsOn": [
         "[resourceId('Microsoft.Web/sites', parameters('functionAppName'))]",
-        "[resourceId('Microsoft.Insights/components', concat(parameters('functionAppName'), '-ai'))]"
+        "[if(equals(parameters('appInsightsChoice'), 'New'), resourceId('Microsoft.Insights/components', concat(parameters('functionAppName'), '-ai')), parameters('appInsightsResourceId'))]"
       ],
       "properties": {
         "script_root_path_href": "[concat('https://', parameters('functionAppName'), '.azurewebsites.net/admin/vfs/home/site/wwwroot/', 'PowerShell-HTTP-Trigger', '/')]",
