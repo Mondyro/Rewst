@@ -26,12 +26,6 @@
         "description": "Location for all resources."
       }
     },
-    "serverFarmId": {
-      "type": "string",
-      "metadata": {
-        "description": "The Resource ID of the existing App Service Plan (If not using Consumption Plan, this should be a Premium/Standard plan)."
-      }
-    },
     "appInsightsResourceId": {
       "type": "string",
       "metadata": {
@@ -58,5 +52,34 @@
         "description": "GitHub repository URL containing the PowerShell scripts and function code."
       }
     }
-  }
-}
+  },
+  "variables": {
+    "functionAppSku": {
+      "tier": "Dynamic",  // This ensures the Consumption Plan (Dynamic) is used
+      "name": "F1"        // The F1 SKU corresponds to the Consumption Plan
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Web/serverFarms",
+      "apiVersion": "2024-04-01",
+      "name": "[parameters('functionAppName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "name": "[parameters('functionAppName')]",
+        "sku": {
+          "name": "[variables('functionAppSku').name]",  // Using F1 SKU for Consumption Plan
+          "tier": "[variables('functionAppSku').tier]",  // Dynamic tier for the Consumption Plan
+          "capacity": 1
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2024-04-01",
+      "name": "[parameters('functionAppName')]",
+      "location": "[parameters('location')]",
+      "tags": {
+        "hidden-link: /app-insights-resource-id": "[parameters('appInsightsResourceId')]",
+        "hidden-link: /app-insights-instrumentation-key": "[parameters('appInsightsInstrumentationKey')]",
+        "hidden-link: /app-insights-conn-string": "InstrumentationKey=[parameters('a
